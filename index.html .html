@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="おてつだい貯金箱">
+<meta name="theme-color" content="#FBF3DF">
+<title>おてつだい貯金箱</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐷</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBF3DF;
+  --card:#FFFFFF;
+  --ink:#453630;
+  --ink-soft:#9A887B;
+  --gold:#FFC53D;
+  --gold-deep:#E8A200;
+  --gold-soft:#FFE9A8;
+  --teal:#2F9E7A;
+  --teal-soft:#E3F4EC;
+  --pig:#F8A8BE;
+  --pig-deep:#D9738F;
+  --pig-soft:#FBD3DE;
+  --stamp:#E25C4A;
+  --line:#EFE4CE;
+  --shadow:0 4px 0 rgba(69,54,48,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Zen Maru Gothic',"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  color:var(--ink);
+  background:radial-gradient(#EADFC4 1.4px, transparent 1.5px) 0 0/24px 24px, var(--paper);
+  line-height:1.6;
+}
+.num{font-family:'Baloo 2','Zen Maru Gothic',sans-serif}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+input{font-family:inherit;color:var(--ink)}
+:focus-visible{outline:3px solid var(--gold-deep);outline-offset:2px;border-radius:6px}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 72px}
+
+/* ---------- header ---------- */
+.top{text-align:center;padding:8px 0 4px}
+.top h1{font-size:30px;font-weight:900;letter-spacing:.04em}
+.top h1 .t-accent{background:linear-gradient(transparent 58%, var(--gold-soft) 58%);padding:0 2px}
+.tagline{font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:2px}
+
+/* ---------- bank card ---------- */
+.bank-card{
+  margin-top:14px;background:var(--card);border:2.5px solid var(--ink);
+  border-radius:26px;box-shadow:var(--shadow);padding:18px 18px 20px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.piggy-stage{position:relative;display:inline-block;line-height:0}
+.piggy-stage svg{width:236px;max-width:70vw;height:auto;display:block}
+.piggy-stage.boing svg{animation:boing .55s ease}
+@keyframes boing{0%{transform:scale(1)}35%{transform:scale(1.09,.92)}65%{transform:scale(.96,1.05)}100%{transform:scale(1)}}
+#hat{display:none}
+.bank-card.achieved #hat{display:block}
+.balance-block{margin-top:4px}
+.balance-label{font-size:13px;font-weight:700;color:var(--ink-soft);letter-spacing:.12em}
+.balance-num{font-size:clamp(44px,13vw,58px);font-weight:800;line-height:1.1;letter-spacing:.01em}
+.balance-num small{font-size:18px;font-weight:700;color:var(--ink-soft);margin-left:6px}
+.withdraw{
+  margin-top:6px;font-size:13px;font-weight:700;color:var(--ink);
+  background:var(--paper);border:2px solid #D8CBB6;border-radius:999px;
+  padding:7px 16px;transition:transform .08s ease;
+}
+.withdraw:active{transform:translateY(2px)}
+.withdraw.armed{color:#fff;background:var(--stamp);border-color:var(--stamp)}
+
+/* goal */
+.goal{margin-top:14px;border-top:2.5px dashed var(--line);padding-top:14px}
+.goal-add{
+  display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;
+  background:var(--teal-soft);border:2.5px solid #1F7C5B;color:#1F7C5B;
+  border-radius:999px;padding:9px 18px;box-shadow:0 3px 0 rgba(47,158,122,.25);
+  transition:transform .08s ease;
+}
+.goal-add:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(47,158,122,.25)}
+.goal-set .goal-head{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.goal-head .goal-ico{font-size:18px}
+.goal-head #goalTarget{margin-left:auto;font-size:15px;color:var(--ink-soft)}
+.mini-btn{font-size:15px;opacity:.75;padding:2px 4px;border-radius:8px}
+.mini-btn:hover{opacity:1}
+.bar{height:18px;margin-top:8px;background:#FFFDF4;border:2.5px solid var(--ink);border-radius:10px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;width:0;background:var(--teal);border-radius:6px;transition:width .6s cubic-bezier(.3,.8,.3,1)}
+.bank-card.achieved .bar i{background:var(--gold)}
+.goal-msg{margin-top:7px;font-size:13px;font-weight:700;color:var(--ink-soft);text-align:left}
+.bank-card.achieved .goal-msg{color:var(--gold-deep)}
+.goal-form{display:grid;gap:8px}
+.goal-form input,.custom input[type="text"],.custom input[type="number"],.kid-add-form input,.kid-edit-form input{
+  width:100%;border:2.5px solid var(--ink);border-radius:14px;padding:10px 14px;
+  font-size:15px;font-weight:700;background:#FFFDF6;
+}
+input::placeholder{color:#A89684;font-weight:700}
+.goal-form-btns{display:flex;gap:8px}
+.btn{
+  flex:1;font-size:14px;font-weight:700;border-radius:999px;padding:10px 14px;
+  background:var(--gold);border:2.5px solid var(--ink);box-shadow:0 3px 0 rgba(69,54,48,.25);
+  transition:transform .08s ease;
+}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(69,54,48,.25)}
+.btn.ghost{background:var(--card);color:var(--ink-soft)}
+
+/* ---------- parent lock, rules, modal ---------- */
+.lock-row{margin-top:10px;display:flex;justify-content:center}
+.lock-btn{font-size:12.5px;font-weight:800;color:var(--ink);background:var(--card);border:2px solid var(--ink);border-radius:999px;padding:6px 16px;box-shadow:0 2px 0 rgba(69,54,48,.2);transition:transform .08s ease}
+.lock-btn:active{transform:translateY(1px)}
+.pin-banner{display:block;margin:12px auto 0;max-width:480px;font-size:12.5px;font-weight:800;line-height:1.55;color:#7A5200;background:var(--gold-soft);border:2px dashed var(--gold-deep);border-radius:14px;padding:9px 14px;text-align:left}
+.rules-note{margin-top:6px;font-size:12px;font-weight:700;color:var(--ink-soft)}
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media (max-width:399px){.rules-grid{grid-template-columns:1fr}}
+.rule-card{background:var(--card);border:2.5px solid var(--ink);border-radius:20px;box-shadow:var(--shadow);padding:12px;display:grid;gap:8px}
+.rule-head{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:900}
+.rule-emoji{font-size:20px}
+.rule-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rule-btn{font-size:11.5px;font-weight:800;border-radius:12px;padding:8px 4px;border:2px solid;display:grid;gap:1px;justify-items:center;line-height:1.35;transition:transform .08s ease}
+.rule-btn b{font-size:14.5px;font-family:'Baloo 2','Zen Maru Gothic',sans-serif}
+.rule-btn:active{transform:translateY(2px)}
+.rule-btn.plus{background:var(--teal-soft);border-color:#1F7C5B;color:#1F7C5B}
+.rule-btn.minus{background:#FBE3DF;border-color:var(--stamp);color:#B23A2A}
+.rule-btn.solo{grid-column:1/-1}
+.modal-overlay{position:fixed;inset:0;background:rgba(69,54,48,.45);display:grid;place-items:center;z-index:150;padding:20px}
+.modal-card{background:var(--card);border:3px solid var(--ink);border-radius:24px;box-shadow:0 8px 0 rgba(69,54,48,.2);padding:22px 20px;width:min(340px,100%);text-align:center;display:grid;gap:12px}
+.modal-card h3{font-size:17px;font-weight:900}
+.modal-note{font-size:13px;font-weight:700;color:var(--ink-soft)}
+#pinInput{width:100%;border:2.5px solid var(--ink);border-radius:14px;padding:10px 14px;font-size:24px;font-weight:800;text-align:center;letter-spacing:.35em;background:#FFFDF6}
+.pin-forgot{font-size:11.5px;font-weight:700;color:var(--ink-soft);border-bottom:2px dotted var(--ink-soft);padding-bottom:1px;justify-self:center}
+.locked .withdraw{opacity:.55;filter:grayscale(.65)}
+.locked .h-del,.locked .kid-add,.locked #kidEditBtn,.locked .parent-only{display:none!important}
+
+/* ---------- month summary & rules edit ---------- */
+.month-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+.m-nav-btn{width:38px;height:38px;border:2.5px solid var(--ink);border-radius:50%;background:var(--card);box-shadow:var(--shadow);font-size:15px;font-weight:900;transition:transform .08s ease}
+.m-nav-btn:active{transform:translateY(2px)}
+.m-nav-btn:disabled{opacity:.35;box-shadow:none;cursor:default}
+.m-label{font-size:17px;font-weight:900}
+.month-card{margin-top:12px;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;box-shadow:var(--shadow);padding:14px}
+.month-empty{margin-top:12px;background:var(--card);border:2.5px dashed #CDBCA4;border-radius:20px;padding:18px 14px;text-align:center;font-size:13.5px;font-weight:700;color:var(--ink-soft)}
+.m-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.m-stat{border-radius:14px;padding:8px 4px;text-align:center;display:grid;gap:2px}
+.m-stat small{font-size:11px;font-weight:800}
+.m-stat b{font-size:18px;font-weight:800;line-height:1.25}
+.m-stat b em{font-style:normal;font-size:11px;margin-left:2px}
+.m-stat.plus{background:var(--teal-soft);color:#1F7C5B}
+.m-stat.minus{background:#FBE3DF;color:#B23A2A}
+.m-stat.net{background:var(--gold-soft);color:#7A5200}
+.m-stat.net.neg{background:#FBE3DF;color:#B23A2A}
+.m-bar{display:flex;height:14px;margin-top:12px;border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--paper)}
+.m-bar i{display:block;height:100%;transition:width .5s ease}
+.m-bar-plus{background:var(--teal)}
+.m-bar-minus{background:var(--stamp)}
+.m-note{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--ink-soft);text-align:center}
+.rules-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rules-edit-toggle{font-size:12.5px;font-weight:800;color:var(--ink);background:var(--paper);border:2px solid #D8CBB6;border-radius:999px;padding:6px 12px;transition:transform .08s ease}
+.rules-edit-toggle:active{transform:translateY(1px)}
+.rules-edit-toggle.on{background:var(--gold);border-color:var(--ink)}
+.rule-edit{display:grid;gap:6px}
+.re-row{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800}
+.re-row span,.re-none{flex:0 0 78px}
+.re-none{font-size:11px;color:var(--ink-soft);font-weight:700}
+.re-row input{width:72px;border:2px solid var(--ink);border-radius:10px;padding:6px 8px;font-size:14px;font-weight:800;text-align:center;background:#FFFDF6}
+.re-row input.bad{border-color:var(--stamp);background:#FBE3DF}
+.re-row em{font-style:normal;color:var(--ink-soft)}
+.rule-save-row{grid-column:1/-1;display:flex;gap:8px;margin-top:2px}
+
+/* ---------- pending approval ---------- */
+.pending-list{list-style:none;margin-top:12px;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.pending-list li{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:2px dashed var(--line)}
+.pending-list li:last-child{border-bottom:none}
+.p-name{flex:1;font-size:14px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-amt{flex:none;font-size:15px;font-weight:800;color:#7A5200}
+.p-btns{flex:none;display:flex;gap:6px}
+.p-ok,.p-no{width:36px;height:36px;border-radius:50%;font-size:15px;font-weight:900;border:2.5px solid;transition:transform .08s ease}
+.p-ok{background:var(--teal-soft);border-color:#1F7C5B;color:#1F7C5B}
+.p-no{background:#FBE3DF;border-color:var(--stamp);color:#B23A2A}
+.p-ok:active,.p-no:active{transform:translateY(2px)}
+.p-wait{flex:none;font-size:11px;font-weight:800;color:var(--ink-soft)}
+
+/* ---------- cloud sync ---------- */
+.cloud-card{margin-top:12px;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;box-shadow:var(--shadow);padding:14px;display:grid;gap:10px}
+.cloud-status{font-size:13px;font-weight:800}
+.cloud-card textarea{width:100%;border:2.5px solid var(--ink);border-radius:14px;padding:10px 12px;font-size:12px;background:#FFFDF6;font-family:monospace;min-height:110px;resize:vertical}
+.cloud-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cloud-row input{flex:1;min-width:140px;border:2.5px solid var(--ink);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:700;background:#FFFDF6}
+.cloud-note{font-size:11.5px;font-weight:700;color:var(--ink-soft)}
+
+/* ---------- kid tabs ---------- */
+.kid-tabs{display:flex;gap:8px;justify-content:center;margin-top:14px;overflow-x:auto;padding:3px 2px;scrollbar-width:none}
+.kid-tabs::-webkit-scrollbar{display:none}
+.kid-tab{flex:1 0 auto;min-width:92px;max-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14.5px;font-weight:800;letter-spacing:.03em;border:2.5px solid var(--ink);border-radius:999px;padding:9px 12px;background:var(--card);box-shadow:var(--shadow);transition:transform .08s ease}
+.kid-tab:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(69,54,48,.16)}
+.kid-tab.active{background:var(--tab,#D9738F);color:#FFF6E9}
+.k-dot{width:11px;height:11px;border-radius:50%;border:2px solid rgba(69,54,48,.25);flex:none}
+.kid-tab.active .k-dot{border-color:rgba(255,246,233,.55)}
+.kid-add{flex:0 0 42px;min-height:42px;border:2.5px dashed #CDBCA4;border-radius:999px;font-size:18px;font-weight:900;color:var(--ink-soft);background:#FFFDF6}
+.kid-add:hover{color:var(--ink)}
+.kid-edit-btn{font-size:12px;opacity:.55;padding:2px 5px;border-radius:8px;vertical-align:middle}
+.kid-edit-btn:hover{opacity:1}
+.kid-add-form,.kid-edit-form{display:grid;gap:8px}
+.kid-add-form{margin:10px auto 0;max-width:420px;border:2.5px dashed #CDBCA4;border-radius:20px;background:#FFFDF6;padding:14px}
+.kid-edit-form{margin-top:10px}
+.btn.danger-armed{background:var(--stamp);color:#fff;border-color:var(--stamp)}
+
+/* ---------- tasks ---------- */
+section{margin-top:26px}
+h2{display:inline-block;font-size:18px;font-weight:900;letter-spacing:.04em;
+   background:linear-gradient(transparent 62%, var(--gold-soft) 62%);padding:0 4px}
+.task-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+.task-btn{
+  position:relative;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;
+  box-shadow:var(--shadow);padding:14px 10px 12px;text-align:center;
+  transition:transform .08s ease;min-height:110px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+}
+.task-btn:hover{transform:translateY(-2px)}
+.task-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(69,54,48,.16)}
+.task-emoji{font-size:30px;line-height:1.2}
+.task-name{font-size:12.5px;font-weight:700;line-height:1.35}
+.task-amt{
+  display:inline-block;margin-top:2px;font-size:13px;font-weight:800;color:#7A5200;
+  background:var(--gold-soft);border:2px solid var(--gold-deep);border-radius:999px;
+  padding:1px 12px;line-height:1.5;
+}
+.custom{
+  margin-top:14px;border:2.5px dashed #CDBCA4;border-radius:20px;background:#FFFDF6;
+  padding:14px;display:grid;gap:10px;
+}
+.custom-label{font-size:13px;font-weight:700;color:var(--ink-soft)}
+.amt-row{display:flex;align-items:center;gap:10px}
+.amt-row input{flex:1;min-width:0}
+.amt-row .yen{font-size:15px;font-weight:900}
+.amt-row .btn{flex:none;padding:10px 20px}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+
+/* ---------- history ---------- */
+.history-list{list-style:none;margin-top:12px;background:var(--card);border:2.5px solid var(--ink);
+  border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.history-list li{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:2px dashed var(--line)}
+.history-list li:last-child{border-bottom:none}
+.h-date{flex:none;font-size:11.5px;font-weight:700;color:var(--ink-soft);width:66px}
+.hanko{
+  flex:none;width:22px;height:22px;border-radius:50%;background:var(--stamp);
+  color:#FFF6E9;font-size:11px;font-weight:900;display:grid;place-items:center;
+  transform:rotate(-12deg);box-shadow:0 1px 0 rgba(69,54,48,.2);
+}
+.h-name{flex:1;font-size:14px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h-amt{flex:none;font-size:16px;font-weight:800;color:#7A5200}
+.h-amt.neg{color:var(--stamp)}
+.h-del{flex:none;width:28px;height:28px;border-radius:50%;color:var(--ink-soft);font-size:16px;font-weight:900;line-height:1}
+.h-del:hover{background:var(--stamp);color:#fff}
+.history-empty{margin-top:12px;background:var(--card);border:2.5px dashed #CDBCA4;border-radius:20px;
+  padding:22px 14px;text-align:center;font-size:13.5px;font-weight:700;color:var(--ink-soft)}
+.reset-row{text-align:center;margin-top:16px}
+.reset-btn{font-size:12px;font-weight:700;color:var(--ink-soft);border-bottom:2px dotted var(--ink-soft);padding-bottom:1px}
+.reset-btn.armed{color:var(--stamp);border-color:var(--stamp)}
+.foot{margin-top:26px;text-align:center;font-size:12px;color:#A08D77;font-weight:700}
+
+/* ---------- coin & toast ---------- */
+.coin-fly{
+  position:fixed;width:46px;height:46px;border-radius:50%;z-index:120;pointer-events:none;
+  display:grid;place-items:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:21px;color:#8A5A00;
+  background:radial-gradient(circle at 32% 30%, var(--gold-soft), var(--gold) 55%, var(--gold-deep));
+  border:3px solid #B87E00;box-shadow:0 3px 8px rgba(69,54,48,.28), inset 0 -3px 0 rgba(184,126,0,.45);
+  transition:transform .72s cubic-bezier(.4,.7,.3,1), opacity .72s ease;
+}
+#toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);
+  background:var(--ink);color:#FFF6E3;font-size:14px;font-weight:700;
+  border-radius:999px;padding:11px 22px;box-shadow:0 6px 18px rgba(69,54,48,.3);
+  opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;
+  max-width:88vw;text-align:center;z-index:130;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (min-width:430px){ .task-grid{grid-template-columns:repeat(3,1fr)} }
+@media (prefers-reduced-motion: reduce){
+  .coin-fly{transition:none;opacity:0}
+  .piggy-stage.boing svg,.bar i{animation:none;transition:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>おてつだい<span class="t-accent">貯金箱</span></h1>
+    <p class="tagline">おてつだいを したら、コインを ためよう!</p>
+  </header>
+
+  <div class="lock-row"><button class="lock-btn" id="lockBtn" type="button">🔒 パパ・ママ</button></div>
+  <button class="pin-banner" id="pinBanner" type="button" hidden>🧑‍🍼 パパ・ママへ：タップして 4けたの ばんごうを きめると、こどもが きろく・おろす を できなくできるよ</button>
+
+  <!-- ================= こども切替 ================= -->
+  <nav class="kid-tabs" id="kidTabs" aria-label="こどもを きりかえる"></nav>
+  <form class="kid-add-form" id="kidAddForm" hidden>
+    <input type="text" id="kidAddName" placeholder="こどもの なまえ" maxlength="10">
+    <div class="goal-form-btns">
+      <button class="btn" type="submit">ちょきんばこを ふやす</button>
+      <button class="btn ghost" type="button" id="kidAddCancel">やめる</button>
+    </div>
+  </form>
+
+  <!-- ================= 貯金箱 ================= -->
+  <section class="bank-card" id="bankCard" aria-label="ちょきんがく">
+    <div class="piggy-stage" id="piggyStage">
+      <svg viewBox="0 0 220 170" role="img" aria-label="ぶたの ちょきんばこ">
+        <!-- tail -->
+        <path d="M34 96 q-18 4 -13 -15 q3 -11 14 -8" fill="none" stroke="var(--pig-deep)" stroke-width="5" stroke-linecap="round"/>
+        <!-- legs -->
+        <rect x="68" y="142" width="20" height="21" rx="9" fill="var(--pig)" stroke="var(--pig-deep)" stroke-width="4"/>
+        <rect x="132" y="142" width="20" height="21" rx="9" fill="var(--pig)" stroke="var(--pig-deep)" stroke-width="4"/>
+        <!-- body -->
+        <ellipse cx="112" cy="98" rx="76" ry="54" fill="var(--pig)" stroke="var(--pig-deep)" stroke-width="4"/>
+        <!-- ear -->
+        <path d="M64 58 Q54 30 86 36 Q98 40 94 60 Q80 54 64 58 Z" fill="var(--pig)" stroke="var(--pig-deep)" stroke-width="4" stroke-linejoin="round"/>
+        <!-- cheek -->
+        <ellipse cx="150" cy="106" rx="9" ry="6.5" fill="#F27E9E" opacity=".55"/>
+        <!-- eye -->
+        <circle cx="148" cy="80" r="5.5" fill="#453630"/>
+        <circle cx="150" cy="78" r="1.8" fill="#fff"/>
+        <!-- snout -->
+        <ellipse cx="180" cy="96" rx="15" ry="12" fill="var(--pig-soft)" stroke="var(--pig-deep)" stroke-width="4"/>
+        <ellipse cx="176" cy="95" rx="2.6" ry="4.2" fill="var(--pig-deep)" opacity=".8"/>
+        <ellipse cx="185" cy="95" rx="2.6" ry="4.2" fill="var(--pig-deep)" opacity=".8"/>
+        <!-- coin slot -->
+        <g transform="rotate(-5 112 40)">
+          <rect x="86" y="36" width="52" height="9" rx="4.5" fill="#7A4E3A"/>
+        </g>
+        <!-- party hat (goal achieved) -->
+        <g id="hat">
+          <path d="M152 10 L170 46 L134 46 Z" fill="#FFC53D" stroke="#453630" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="152" cy="10" r="4.5" fill="#E25C4A" stroke="#453630" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="balance-block">
+      <p class="balance-label"><span id="whoName">ひゅうが</span> の ちょきん <button class="kid-edit-btn" id="kidEditBtn" type="button" aria-label="なまえを かえる・この子を けす">✏️</button></p>
+      <p class="balance-num num"><span id="balanceNum" data-v="0">0</span><small>えん</small></p>
+      <button class="withdraw" id="withdrawBtn" type="button">💴 おかねを おろす</button>
+    <form class="kid-edit-form" id="kidEditForm" hidden>
+      <input type="text" id="kidEditName" maxlength="10" aria-label="なまえを かえる">
+      <div class="goal-form-btns">
+        <button class="btn" type="submit">なまえを かえる</button>
+        <button class="btn ghost" type="button" id="kidDeleteBtn">🗑️ この子を けす</button>
+        <button class="btn ghost" type="button" id="kidEditCancel">やめる</button>
+      </div>
+    </form>
+    </div>
+
+    <div class="goal">
+      <button class="goal-add" id="goalAddBtn" type="button">🎯 もくひょうを きめる</button>
+      <div class="goal-set" id="goalSet" hidden>
+        <div class="goal-head">
+          <span class="goal-ico">🎯</span><b id="goalName"></b>
+          <span id="goalTarget" class="num"></span>
+          <button class="mini-btn" id="goalEdit" type="button" aria-label="もくひょうを かえる">✏️</button>
+        </div>
+        <div class="bar" role="progressbar" aria-label="もくひょうまでの しんちょく"><i id="goalFill"></i></div>
+        <p class="goal-msg" id="goalMsg"></p>
+      </div>
+      <form class="goal-form" id="goalForm" hidden>
+        <input type="text" id="goalNameIn" placeholder="なにが ほしい？ (レゴ・ぬいぐるみ…)" maxlength="24">
+        <input type="number" id="goalAmountIn" placeholder="いくらえん？" inputmode="numeric" min="1">
+        <div class="goal-form-btns">
+          <button class="btn" type="submit">きめる</button>
+          <button class="btn ghost" type="button" id="goalCancel">やめる</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= おてつだい ================= -->
+  <section aria-label="おてつだい">
+    <h2>🐷 おてつだいを えらんでね</h2>
+    <div class="task-grid" id="taskGrid"></div>
+    <form class="custom" id="customForm">
+      <span class="custom-label">✏️ そのほかのおてつだいは、じぶんで かいてね</span>
+      <input type="text" id="customName" placeholder="なにをした？ (例：ごみばこ けんさく)" maxlength="24">
+      <div class="amt-row">
+        <input type="number" id="customAmount" placeholder="いくら？" inputmode="numeric" min="1">
+        <span class="yen">えん</span>
+        <button class="btn" type="submit">きろく!</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ================= かくにんまち ================= -->
+  <section aria-label="かくにんまち" id="pendingSection" hidden>
+    <h2>⏳ かくにんまち</h2>
+    <p class="rules-note">おした おてつだいは、パパ・ママが みとめると ちょきんに はいるよ</p>
+    <div id="pendingBox"></div>
+  </section>
+
+  <!-- ================= パパ・ママのルール ================= -->
+  <section class="parent-only" id="rulesSection" aria-label="パパ・ママのルール">
+    <div class="rules-top">
+      <h2>📋 パパ・ママの ルール</h2>
+      <button class="rules-edit-toggle" id="rulesEditBtn" type="button">⚙️ きんがくを かえる</button>
+    </div>
+    <p class="rules-note">えらんでいる こどもの タブに つくよ。まちがえないように ちゅういしてね</p>
+    <div class="rules-grid" id="rulesGrid"></div>
+    <div class="cloud-card">
+      <b class="cloud-status" id="cloudStatus">☁️ 未設定</b>
+      <textarea id="cloudCfg" placeholder="Firebaseの設定（firebaseConfig）を はりつけ"></textarea>
+      <div class="cloud-row">
+        <input type="text" id="cloudFam" placeholder="家族の ID (例: hyuga-lili)" maxlength="40">
+        <button class="btn" type="button" id="cloudConnect">☁️ つなげる</button>
+        <button class="btn ghost" type="button" id="cloudDisconnect" hidden>きりはなす</button>
+      </div>
+      <p class="cloud-note">つなぐと、家族ぜんたいで同じ きろくを つかえるよ。こどもの携帯でも同じURLを開いて同じ設定をはれば OK</p>
+    </div>
+  </section>
+
+  <!-- ================= まとめ ================= -->
+  <section aria-label="いっかげつの まとめ">
+    <h2>📅 いっかげつの まとめ</h2>
+    <div class="month-nav">
+      <button class="m-nav-btn" id="mPrev" type="button" aria-label="まえの 月">◀</button>
+      <b class="m-label num" id="mLabel"></b>
+      <button class="m-nav-btn" id="mNext" type="button" aria-label="つぎの 月">▶</button>
+    </div>
+    <div id="monthBox"></div>
+  </section>
+
+  <!-- ================= きろく ================= -->
+  <section aria-label="きろく">
+    <h2>📖 きろく</h2>
+    <div id="historyBox"></div>
+    <div class="reset-row parent-only">
+      <button class="reset-btn" id="resetBtn" type="button">ぜんぶ リセット</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>※ きろくは このブラウザの 中に 保存されるよ（ver.16）<br>（きろく・おろす・けす・なまえは 🔒パパ・ママモードで できるよ）</p>
+  </footer>
+</div>
+
+<div class="modal-overlay" id="pinOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+  <form class="modal-card" id="pinForm">
+    <h3 id="pinTitle">🔓 パパ・ママモード</h3>
+    <p class="modal-note" id="pinNote">4けたの ばんごうを いれてね</p>
+    <input type="password" id="pinInput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="····" aria-label="4けたの ばんごう">
+    <div class="goal-form-btns">
+      <button class="btn" type="submit" id="pinSubmit">ロックを とく</button>
+      <button class="btn ghost" type="button" id="pinCancel">やめる</button>
+    </div>
+    <button class="pin-forgot" type="button" id="pinForgot" hidden>ばんごうを わすれた…（すべての きろくも きえる）</button>
+  </form>
+</div>
+
+<div id="toast"  role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ---------- data ---------- */
+const LS_KEY = 'okodukai_v2', LS_OLD = 'okodukai_v1';
+const PRESETS = [
+  {name:'せんたくかたづけ', emoji:'👕', amount:30},
+  {name:'へやのそうじ',     emoji:'🧹', amount:100},
+  {name:'ごはん しっかり',  emoji:'🍚', amount:30},
+  {name:'しゅくだい',       emoji:'📚', amount:30},
+  {name:'ふろ はやいり',    emoji:'🛁', amount:30},
+  {name:'はやおき 7じはん', emoji:'⏰', amount:30},
+  {name:'ドライヤー',       emoji:'💨', amount:30},
+  {name:'9じにねる',        emoji:'🛏️', amount:30},
+];
+const PALETTES = [
+  {pig:'#F8A8BE', deep:'#D9738F', soft:'#FBD3DE', tab:'#C9587A'},
+  {pig:'#9CC8F0', deep:'#5B93C8', soft:'#D9EBFA', tab:'#3F77AB'},
+  {pig:'#8FD8B8', deep:'#4FA87E', soft:'#D2F0E0', tab:'#33815F'},
+  {pig:'#F5B97E', deep:'#D08A4A', soft:'#FAE4C4', tab:'#A96A2B'},
+  {pig:'#C3A8E8', deep:'#9270C0', soft:'#E7DCF7', tab:'#7554A2'},
+];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function newKid(name, color){
+  return {id: uid(), name, color, entries: [], goal: null, pending: []};
+}
+function freshState(){
+  return {kids: [newKid('ひゅうが', 1), newKid('りり', 0), newKid('りゅうと', 2)], active: 0, pin: null, rules: {}};
+}
+function ensureRyuto(kids){
+  if (Array.isArray(kids) && kids.length && !kids.some(k => k && k.name === 'りゅうと')){
+    kids.push(newKid('りゅうと', 2));
+  }
+  return kids;
+}
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if (s && Array.isArray(s.kids) && s.kids.length &&
+        s.kids.every(k => k && Array.isArray(k.entries))){
+      const pin = (typeof s.pin === 'string' && /^\d{4}$/.test(s.pin)) ? s.pin : null;
+      const rules = (s.rules && typeof s.rules === 'object' && !Array.isArray(s.rules)) ? s.rules : {};
+      s.kids.forEach(k => { if (!Array.isArray(k.pending)) k.pending = []; });
+      ensureRyuto(s.kids);
+      return {kids: s.kids, active: Math.max(0, Math.min(s.active | 0, s.kids.length - 1)), pin, rules};
+    }
+  }catch(e){}
+  try{
+    const old = JSON.parse(localStorage.getItem(LS_OLD));
+    if (old && Array.isArray(old.entries) && old.entries.length){
+      const st = freshState();
+      st.kids[0].entries = old.entries;
+      st.kids[0].goal = old.goal || null;
+      return st;
+    }
+  }catch(e){}
+  return freshState();
+}
+let state = load();
+function saveLocal(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    localStorage.removeItem(LS_OLD);
+  }catch(e){}
+}
+function save(){
+  saveLocal();
+  try{ cloudWrite(); }catch(e){}
+}
+save();
+const ak = () => state.kids[state.active];
+const balance = () => ak().entries.reduce((a, e) => a + e.amount, 0);
+const fmt = n => n.toLocaleString('ja-JP');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dateStr = ts => {
+  const d = new Date(ts), dow = ['日','月','火','水','木','金','土'][d.getDay()];
+  return (d.getMonth()+1) + '/' + d.getDate() + '(' + dow + ')';
+};
+
+/* ---------- elements ---------- */
+const $ = id => document.getElementById(id);
+const bankCard = $('bankCard'), piggyStage = $('piggyStage'),
+      balanceNum = $('balanceNum'), withdrawBtn = $('withdrawBtn'),
+      whoName = $('whoName'), kidTabs = $('kidTabs'),
+      kidAddForm = $('kidAddForm'), kidEditForm = $('kidEditForm'),
+      goalAddBtn = $('goalAddBtn'), goalSet = $('goalSet'), goalForm = $('goalForm'),
+      goalName = $('goalName'), goalTarget = $('goalTarget'),
+      goalFill = $('goalFill'), goalMsg = $('goalMsg'),
+      taskGrid = $('taskGrid'), customForm = $('customForm'),
+      customName = $('customName'), customAmount = $('customAmount'),
+      historyBox = $('historyBox'), resetBtn = $('resetBtn'),
+      toastEl = $('toast'),
+      lockBtn = $('lockBtn'), pinBanner = $('pinBanner'),
+      pinOverlay = $('pinOverlay'), pinForm = $('pinForm'),
+      pinTitle = $('pinTitle'), pinNote = $('pinNote'),
+      pinInput = $('pinInput'), pinSubmit = $('pinSubmit'),
+      pinCancel = $('pinCancel'), pinForgot = $('pinForgot'),
+      rulesSection = $('rulesSection'), rulesGrid = $('rulesGrid'),
+      pendingSection = $('pendingSection'), pendingBox = $('pendingBox'),
+      cloudStatus = $('cloudStatus'), cloudCfg = $('cloudCfg'),
+      cloudFam = $('cloudFam'), cloudConnect = $('cloudConnect'),
+      cloudDisconnect = $('cloudDisconnect');
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 4500);
+}
+
+/* ---------- balance count-up ---------- */
+let countGen = 0;
+function countTo(el, to){
+  const g = ++countGen;
+  const from = parseInt(el.dataset.v || '0', 10);
+  el.dataset.v = to;
+  if (reducedMotion || from === to){ el.textContent = fmt(to); return; }
+  const dur = 620, t0 = performance.now();
+  (function tick(t){
+    if (g !== countGen) return;
+    const p = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(Math.round(from + (to - from) * e));
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* ---------- tabs & theme ---------- */
+function renderTabs(){
+  kidTabs.innerHTML = state.kids.map((k, i) => {
+    const p = PALETTES[k.color % PALETTES.length];
+    const act = i === state.active;
+    const st = act ? ' aria-current="true" style="--tab:' + p.tab + '"' : '';
+    return '<button class="kid-tab' + (act ? ' active' : '') + '" type="button" data-i="' + i + '"' + st +
+           '><i class="k-dot" style="background:' + p.deep + '"></i>' + esc(k.name) + '</button>';
+  }).join('') + (state.kids.length < 6
+    ? '<button class="kid-add" id="kidAddBtn" type="button" aria-label="こどもを ふやす">＋</button>' : '');
+  kidTabs.querySelectorAll('.kid-tab').forEach(b =>
+    b.addEventListener('click', () => switchKid(parseInt(b.dataset.i, 10))));
+  const add = $('kidAddBtn');
+  if (add) add.addEventListener('click', () => {
+    kidAddForm.hidden = false;
+    $('kidAddName').focus();
+  });
+}
+function switchKid(i){
+  if (i === state.active) return;
+  state.active = i;
+  save();
+  kidEditForm.hidden = true;
+  kidAddForm.hidden = true;
+  disarmWithdraw();
+  renderAll();
+}
+function retheme(){
+  const p = PALETTES[ak().color % PALETTES.length];
+  bankCard.style.setProperty('--pig', p.pig);
+  bankCard.style.setProperty('--pig-deep', p.deep);
+  bankCard.style.setProperty('--pig-soft', p.soft);
+}
+function renderAll(){
+  renderTabs();
+  renderLock();
+  retheme();
+  whoName.textContent = ak().name;
+  disarmReset();
+  renderHistory();
+  updateBalance();
+}
+
+/* ---------- render ---------- */
+function renderTasks(){
+  taskGrid.innerHTML = PRESETS.map(p => `
+    <button class="task-btn" type="button" data-name="${esc(p.name)}" data-emoji="${p.emoji}" data-amount="${p.amount}">
+      <span class="task-emoji">${p.emoji}</span>
+      <span class="task-name">${esc(p.name)}</span>
+      <span class="task-amt num">${p.amount}えん</span>
+    </button>`).join('');
+  taskGrid.querySelectorAll('.task-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      requestEntry(btn.dataset.name, btn.dataset.emoji, parseInt(btn.dataset.amount,10), btn);
+    });
+  });
+}
+
+function renderHistory(){
+  renderMonth();
+  const k = ak();
+  if (!k.entries.length){
+    historyBox.innerHTML = `<div class="history-empty">🐷 まだ きろくが ないよ。<br>おてつだいを はじめよう!</div>`;
+    return;
+  }
+  const rows = k.entries.slice().reverse().map(e => {
+    const amt = e.amount < 0
+      ? `<b class="h-amt num neg">−${fmt(-e.amount)}<small>えん</small></b>`
+      : `<b class="h-amt num">+${fmt(e.amount)}<small>えん</small></b>`;
+    const hanko = e.amount < 0 ? '' : `<span class="hanko" aria-hidden="true">済</span>`;
+    return `<li>
+      <span class="h-date">${dateStr(e.ts)}</span>${hanko}
+      <span class="h-name">${e.emoji} ${esc(e.name)}</span>
+      ${amt}
+      <button class="h-del" type="button" data-id="${e.id}" aria-label="このきろくを けす">×</button>
+    </li>`;
+  }).join('');
+  historyBox.innerHTML = `<ul class="history-list">${rows}</ul>`;
+  historyBox.querySelectorAll('.h-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.pin && !unlocked){ toast(LOCK_MSG); return; }
+      const kid = ak();
+      kid.entries = kid.entries.filter(e => e.id !== btn.dataset.id);
+      save(); renderHistory(); updateBalance();
+      toast('きろくを けしたよ');
+    });
+  });
+}
+
+function renderGoal(){
+  const g = ak().goal;
+  if (!g){
+    goalSet.hidden = true; goalForm.hidden = true; goalAddBtn.hidden = false;
+    return;
+  }
+  goalAddBtn.hidden = true; goalForm.hidden = true; goalSet.hidden = false;
+  goalName.textContent = g.name;
+  goalTarget.textContent = fmt(g.amount) + 'えん';
+  const b = Math.max(0, balance());
+  const pct = Math.min(100, Math.round(b / g.amount * 100));
+  goalFill.style.width = pct + '%';
+  const achieved = b >= g.amount;
+  bankCard.classList.toggle('achieved', achieved);
+  goalSet.setAttribute('aria-valuenow', pct);
+  if (achieved){
+    goalMsg.textContent = '🎉 もくひょう たっせい! すごい!';
+  } else {
+    const rest = g.amount - b;
+    const perMax = Math.max(...PRESETS.map(p => p.amount), 1);
+    goalMsg.textContent = `のこり ${fmt(rest)}えん! (およそ あと${Math.ceil(rest / perMax)}かい)`;
+  }
+}
+
+function updateBalance(){
+  countTo(balanceNum, balance());
+  renderGoal();
+}
+
+/* ---------- pending approval ---------- */
+function requestEntry(name, emoji, amount, sourceEl){
+  if (!amount || amount <= 0) return;
+  ak().pending.push({id: uid(), name, emoji, amount, ts: Date.now()});
+  save(); renderPending();
+  toast(`⏳ ${emoji} ${name}！ パパ・ママの かくにんを まってるよ`);
+}
+function renderPending(){
+  const k = ak();
+  if (!k.pending.length){
+    pendingSection.hidden = true; pendingBox.innerHTML = '';
+    updateLockBtn(); return;
+  }
+  pendingSection.hidden = false;
+  const rows = k.pending.slice().reverse().map(p => {
+    const btns = unlocked
+      ? `<span class="p-btns">
+           <button class="p-ok" type="button" data-id="${p.id}" aria-label="みとめる">✔</button>
+           <button class="p-no" type="button" data-id="${p.id}" aria-label="とりけす">✕</button>
+         </span>`
+      : `<span class="p-wait">⏳ パパ・ママを まってね</span>`;
+    return `<li>
+      <span class="h-date">${dateStr(p.ts)}</span>
+      <span class="p-name">${p.emoji} ${esc(p.name)}</span>
+      <b class="p-amt num">+${fmt(p.amount)}<small>えん</small></b>
+      ${btns}
+    </li>`;
+  }).join('');
+  pendingBox.innerHTML = `<ul class="pending-list">${rows}</ul>`;
+  pendingBox.querySelectorAll('.p-ok').forEach(b =>
+    b.addEventListener('click', () => approveEntry(b.dataset.id, b)));
+  pendingBox.querySelectorAll('.p-no').forEach(b =>
+    b.addEventListener('click', () => rejectEntry(b.dataset.id)));
+  updateLockBtn();
+}
+function approveEntry(id, btn){
+  const k = ak();
+  const p = k.pending.find(x => x.id === id);
+  if (!p) return;
+  const kidId = k.id;
+  k.pending = k.pending.filter(x => x.id !== id);
+  k.entries.push({id: p.id, name: p.name, emoji: p.emoji, amount: p.amount, ts: p.ts});
+  save(); renderPending();
+  flyCoin(btn, () => {
+    if (ak().id === kidId) updateBalance();
+    toast(`✔ ${p.emoji} ${p.name} +${fmt(p.amount)}えん みとめた!`);
+  });
+}
+function rejectEntry(id){
+  const k = ak();
+  const p = k.pending.find(x => x.id === id);
+  if (!p) return;
+  k.pending = k.pending.filter(x => x.id !== id);
+  save(); renderPending();
+  toast(`✕ ${p.name}は とりけしたよ`);
+}
+
+/* ---------- coin animation ---------- */
+function flyCoin(fromEl, done){
+  if (reducedMotion){ done(); return; }
+  const from = fromEl.getBoundingClientRect();
+  const pig  = piggyStage.getBoundingClientRect();
+  const c = document.createElement('div');
+  c.className = 'coin-fly'; c.textContent = '¥'; c.setAttribute('aria-hidden','true');
+  const size = 46;
+  const sx = from.left + from.width/2  - size/2;
+  const sy = from.top  + from.height/2 - size/2;
+  const ex = pig.left  + pig.width*0.509 - size/2;
+  const ey = pig.top   + pig.height*0.235 - size/2;
+  c.style.left = sx + 'px'; c.style.top = sy + 'px';
+  document.body.appendChild(c);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    c.style.transform = `translate(${ex-sx}px, ${ey-sy}px) scale(.42) rotate(540deg)`;
+    c.style.opacity = '0.1';
+  }));
+  setTimeout(() => {
+    c.remove();
+    piggyStage.classList.remove('boing');
+    void piggyStage.offsetWidth;
+    piggyStage.classList.add('boing');
+    piggyStage.addEventListener('animationend', () => piggyStage.classList.remove('boing'), {once:true});
+    done();
+  }, 730);
+}
+
+/* ---------- cloud sync (REST + polling) ---------- */
+const CLOUD_LS = 'okodukai_cloud';
+let cloud = {on:false, fam:'', docUrl:'', lastLocalWrite:0, pollTimer:null};
+
+function normalizeState(s){
+  if (!s || !Array.isArray(s.kids) || !s.kids.length) return null;
+  s.kids.forEach(k => {
+    if (!Array.isArray(k.entries)) k.entries = [];
+    if (!Array.isArray(k.pending)) k.pending = [];
+    if (!k.id) k.id = uid();
+  });
+  ensureRyuto(s.kids);
+  s.active = Math.max(0, Math.min(s.active | 0, s.kids.length - 1));
+  s.pin = (typeof s.pin === 'string' && /^\d{4}$/.test(s.pin)) ? s.pin : null;
+  s.rules = (s.rules && typeof s.rules === 'object' && !Array.isArray(s.rules)) ? s.rules : {};
+  s.updatedAt = s.updatedAt || 0;
+  return s;
+}
+function loadCloudCfg(){
+  try{ return JSON.parse(localStorage.getItem(CLOUD_LS) || 'null'); }catch(e){ return null; }
+}
+function renderCloud(){
+  const c = loadCloudCfg();
+  cloudStatus.textContent = cloud.on ? `☁️ つながってるよ（家族ID: ${cloud.fam}）`
+    : (c ? '☁️ 設定あり（まだ つながらない）' : '☁️ 未設定（この端末だけに保存）');
+  cloudDisconnect.hidden = !c;
+}
+function applyRemote(remote){
+  const next = normalizeState(remote);
+  if (!next) return;
+  state = next;
+  saveLocal();
+  disarmWithdraw(); disarmReset();
+  kidEditForm.hidden = true; kidAddForm.hidden = true;
+  renderRules(); renderAll();
+}
+function cloudWrite(){
+  if (!cloud.on || !cloud.docUrl) return;
+  const now = Date.now();
+  cloud.lastLocalWrite = now;
+  state.updatedAt = now;
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+  const snapshotState = Object.assign({}, state);
+  fetch(cloud.docUrl, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({fields: {
+      json: {stringValue: JSON.stringify(snapshotState)},
+      updatedAt: {integerValue: String(now)}
+    }})
+  }).catch(()=>{});
+}
+function dataSizeOf(st){
+  return st && Array.isArray(st.kids)
+    ? st.kids.reduce((n,k)=>n+(k.entries?k.entries.length:0)+(k.pending?k.pending.length:0),0) : 0;
+}
+function cloudFetch(silent, tryN){
+  tryN = tryN || 1;
+  if (!cloud.docUrl) return;
+  fetch(cloud.docUrl).then(r => r.json()).then(d => {
+    cloud.on = true; renderCloud();
+    const j = d.fields && d.fields.json && d.fields.json.stringValue;
+    if (j){
+      let remote = null;
+      try{ remote = JSON.parse(j); }catch(e){}
+      const rs = dataSizeOf(remote), ls = dataSizeOf(state);
+      if (remote && Array.isArray(remote.kids) && remote.kids.length && rs >= ls){
+        applyRemote(remote);
+        if (!silent) toast('☁️ クラウドの きろくを よみこんだよ!');
+        return;
+      }
+    }
+    cloudWrite();
+    if (!silent) toast('☁️ クラウド同期を はじめたよ!');
+  }).catch(err => {
+    if (tryN < 4){
+      cloudStatus.textContent = `☁️ つなぎなおし中… (${tryN}/3)`;
+      setTimeout(() => cloudFetch(silent, tryN + 1), 2000 * tryN);
+      return;
+    }
+    showCloudErr(err);
+  });
+}
+function startPolling(){
+  clearInterval(cloud.pollTimer);
+  cloud.pollTimer = setInterval(() => {
+    if (!cloud.on || !cloud.docUrl) return;
+    fetch(cloud.docUrl).then(r => r.json()).then(d => {
+      const j = d.fields && d.fields.json && d.fields.json.stringValue;
+      if (!j) return;
+      let remote = null;
+      try{ remote = JSON.parse(j); }catch(e){ return; }
+      if (!remote) return;
+      if ((remote.updatedAt || 0) !== cloud.lastLocalWrite){
+        const rs = dataSizeOf(remote), ls = dataSizeOf(state);
+        if ((remote.updatedAt || 0) > (state.updatedAt || 0) && Array.isArray(remote.kids) && remote.kids.length) applyRemote(remote);
+      }
+    }).catch(()=>{});
+  }, 10000);
+}
+function showCloudErr(err){
+  const code = (err && (err.code || err.message)) || 'ふめい';
+  let hint = 'Wi-Fiとモバイル通信を きりかえて ためすか、すこし まって もういちど';
+  if (String(code).includes('permission')) hint = 'Firestoreの ルールを かくにん（true に かきかえ）';
+  const msg = '☁️ エラー: ' + code + ' — ' + hint;
+  cloud.on = false; renderCloud();
+  cloudStatus.textContent = msg;
+  toast(msg);
+}
+function connectCloud(c, silent){
+  try{
+    if (!c || !c.config || !c.config.projectId || !c.familyId) throw new Error('cfg');
+    cloud.fam = c.familyId;
+    cloud.docUrl = 'https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(c.config.projectId) + '/databases/(default)/documents/families/' + encodeURIComponent(c.familyId);
+    cloudFetch(silent, 1);
+    startPolling();
+    renderCloud();
+  }catch(e){ showCloudErr(e); }
+}
+function initCloud(){
+  const c = loadCloudCfg();
+  if (c){
+    try{ cloudCfg.value = JSON.stringify(c.config, null, 2); }catch(e){}
+    cloudFam.value = c.familyId;
+    connectCloud(c, true);
+  }
+  renderCloud();
+}
+cloudConnect.addEventListener('click', () => {
+  const raw = cloudCfg.value.trim();
+  const fam = (cloudFam.value.trim() || 'our-family').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (!raw || !m){ toast('☁️ Firebaseの設定を はりつけてね'); return; }
+  let config;
+  try{ config = (new Function('return (' + m[0] + ')'))(); }
+  catch(e){ toast('☁️ 設定の コピーが ちがうみたい'); return; }
+  if (!config || !config.projectId){ toast('☁️ projectIdが ないよ。コピーを たしかめて'); return; }
+  const c = {config, familyId: fam};
+  localStorage.setItem(CLOUD_LS, JSON.stringify(c));
+  connectCloud(c, false);
+});
+cloudDisconnect.addEventListener('click', () => {
+  localStorage.removeItem(CLOUD_LS);
+  location.reload();
+});
+
+/* ---------- parent lock & rules ---------- */
+const RULES = [
+  {id:'katazuke', name:'かたづけ', emoji:'🧹', plus:null,
+   minus:{label:'できてない', entry:'かたづけ できてなかった', amount:50}},
+  {id:'asaok', name:'あさおき', emoji:'⏰', plus:null,
+   minus:{label:'おきられなかった', entry:'あさおき できなかった', amount:50}},
+  {id:'mongen', name:'もんげん', emoji:'🚪', plus:null,
+   minus:{label:'やぶった', entry:'もんげんやぶり', amount:50}},
+  {id:'yakusoku', name:'やくそく', emoji:'🤝', plus:null,
+   minus:{label:'まもらなかった', entry:'やくそくを まもらなかった', amount:300}},
+  {id:'okashi', name:'へやで おかし', emoji:'🍬', plus:null,
+   minus:{label:'たべたら', entry:'へやで おかしを たべた', amount:100}},
+  {id:'sentaku', name:'せんたくもの', emoji:'👕', plus:null,
+   minus:{label:'ださなかった', entry:'せんたくものを ださなかった', amount:50}},
+  {id:'mono', name:'もの つかったら', emoji:'🧸', plus:null,
+   minus:{label:'もどさなかった', entry:'ものを つかったのに もどさなかった', amount:300}},
+  {id:'gohan', name:'ごはん', emoji:'🍚', plus:null,
+   minus:{label:'しっかりたべなかった', entry:'ごはん しっかりたべなかった', amount:50}},
+  {id:'sofa', name:'ソファー', emoji:'🛋️', plus:null,
+   minus:{label:'ソファーでたべた', entry:'ソファーでたべた', amount:30}},
+];
+let unlocked = !state.pin;
+let rulesEdit = false;
+let pinMode = 'unlock';
+let firstPin = '';
+let lockTimer = null;
+const AUTOLOCK_MS = 180000;
+const LOCK_MSG = '🔒 パパ・ママが ロックを とくと つかえるよ';
+
+function startAutoLock(){
+  clearTimeout(lockTimer);
+  if (state.pin && unlocked) lockTimer = setTimeout(lockNow, AUTOLOCK_MS);
+}
+function lockNow(){
+  unlocked = false;
+  clearTimeout(lockTimer);
+  kidEditForm.hidden = true; kidAddForm.hidden = true;
+  disarmWithdraw(); disarmReset();
+  renderLock();
+  toast('🔒 ロックしたよ');
+}
+function openPin(mode){
+  pinMode = mode;
+  pinForgot.hidden = mode !== 'unlock';
+  if (mode === 'set1'){
+    pinTitle.textContent = '🧑‍🍼 パパ・ママの ばんごう';
+    pinNote.textContent = 'パパ・ママだけの 4けたの ばんごうを きめてね';
+    pinSubmit.textContent = 'きめる';
+  } else {
+    pinTitle.textContent = '🔓 パパ・ママモード';
+    pinNote.textContent = '4けたの ばんごうを いれてね';
+    pinSubmit.textContent = 'ロックを とく';
+  }
+  pinInput.value = '';
+  pinOverlay.hidden = false;
+  pinInput.focus();
+}
+function updateLockBtn(){
+  const pend = ak().pending.length;
+  lockBtn.textContent = !state.pin ? '🔒 ばんごうを きめる'
+    : (unlocked ? '🔓 ロックする' : (pend ? `🔒 パパ・ママ (${pend})` : '🔒 パパ・ママ'));
+}
+function renderLock(){
+  const enforce = !!state.pin;
+  document.body.classList.toggle('locked', enforce && !unlocked);
+  rulesSection.style.display = unlocked ? '' : 'none';
+  pinBanner.hidden = enforce;
+  updateLockBtn();
+  renderPending();
+}
+if (state.rules.yakusoku && state.rules.yakusoku.minus === 100) delete state.rules.yakusoku;
+const ruleAmt = (r, k) => {
+  const o = state.rules[r.id];
+  if (o && Number.isFinite(o[k])) return o[k];
+  return r[k] ? r[k].amount : null;
+};
+function renderRules(){
+  $('rulesEditBtn').textContent = rulesEdit ? 'やめる' : '⚙️ きんがくを かえる';
+  $('rulesEditBtn').classList.toggle('on', rulesEdit);
+  if (rulesEdit){
+    rulesGrid.innerHTML = RULES.map((r, i) => {
+      const p = ruleAmt(r, 'plus'), m = ruleAmt(r, 'minus');
+      const plusRow = r.plus
+        ? `<label class="re-row"><span>＋の きんがく</span><input type="number" inputmode="numeric" min="0" max="99999" value="${p}" data-r="${i}" data-k="plus"><em>えん</em></label>`
+        : `<div class="re-none">＋ボタン なし</div>`;
+      return `<div class="rule-card">
+        <div class="rule-head"><span class="rule-emoji">${r.emoji}</span><b>${esc(r.name)}</b></div>
+        <div class="rule-edit">
+          ${plusRow}
+          <label class="re-row"><span>−の きんがく</span><input type="number" inputmode="numeric" min="0" max="99999" value="${m}" data-r="${i}" data-k="minus"><em>えん</em></label>
+          <span class="rules-note">0えん にすると ボタンが きえるよ</span>
+        </div>
+      </div>`;
+    }).join('') + `<div class="rule-save-row">
+      <button class="btn" type="button" id="ruleSaveBtn">きんがくを ほぞん</button>
+      <button class="btn ghost" type="button" id="ruleResetBtn">もとに もどす</button>
+    </div>`;
+    $('ruleSaveBtn').addEventListener('click', saveRuleAmounts);
+    $('ruleResetBtn').addEventListener('click', () => {
+      state.rules = {}; save(); renderRules();
+      toast('📋 ルールの きんがくを もとに もどしたよ');
+    });
+    return;
+  }
+  rulesGrid.innerHTML = RULES.map((r, i) => {
+    const p = ruleAmt(r, 'plus'), m = ruleAmt(r, 'minus');
+    const plus = (r.plus && p > 0)
+      ? `<button class="rule-btn plus" type="button" data-r="${i}" data-k="plus">${esc(r.plus.label)}<b>+${p}</b></button>` : '';
+    const minus = m > 0
+      ? `<button class="rule-btn minus${r.plus ? '' : ' solo'}" type="button" data-r="${i}" data-k="minus">${esc(r.minus.label)}<b>−${m}</b></button>` : '';
+    const off = (!plus && !minus) ? '<span class="rules-note">この ルールは いま オフだよ</span>' : '';
+    return `<div class="rule-card">
+      <div class="rule-head"><span class="rule-emoji">${r.emoji}</span><b>${esc(r.name)}</b></div>
+      <div class="rule-btns">${plus}${minus}</div>${off}
+    </div>`;
+  }).join('');
+  rulesGrid.querySelectorAll('.rule-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = RULES[parseInt(btn.dataset.r, 10)];
+      const k = btn.dataset.k;
+      const act = k === 'plus' ? r.plus : r.minus;
+      const amt = k === 'plus' ? ruleAmt(r, k) : -ruleAmt(r, k);
+      addEntry(act.entry, r.emoji, amt, btn);
+    });
+  });
+}
+function saveRuleAmounts(){
+  const next = {};
+  let ok = true;
+  rulesGrid.querySelectorAll('input[data-r]').forEach(inp => {
+    inp.classList.remove('bad');
+    const r = RULES[parseInt(inp.dataset.r, 10)];
+    const v = Math.floor(parseFloat(inp.value));
+    if (!Number.isFinite(v) || v < 0 || v > 99999){ ok = false; inp.classList.add('bad'); return; }
+    (next[r.id] = next[r.id] || {})[inp.dataset.k] = v;
+  });
+  if (!ok){ toast('⚙️ きんがくは 0〜99999えん で いれてね'); return; }
+  state.rules = Object.assign({}, state.rules, next);
+  save();
+  rulesEdit = false;
+  renderRules();
+  toast('📋 きんがくを かえたよ!');
+}
+$('rulesEditBtn').addEventListener('click', () => {
+  rulesEdit = !rulesEdit;
+  renderRules();
+});
+
+/* ---------- month summary ---------- */
+let monthOffset = 0;
+function renderMonth(){
+  const now = new Date();
+  const view = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const y = view.getFullYear(), m = view.getMonth();
+  $('mLabel').textContent = `${y}ねん ${m + 1}がつ`;
+  $('mNext').disabled = monthOffset >= 0;
+  const inMonth = ak().entries.filter(e => {
+    const d = new Date(e.ts);
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+  if (!inMonth.length){
+    $('monthBox').innerHTML = `<div class="month-empty">この 月の きろくは まだ ないよ</div>`;
+    return;
+  }
+  const plus = inMonth.filter(e => e.amount > 0).reduce((a, e) => a + e.amount, 0);
+  const minus = inMonth.filter(e => e.amount < 0).reduce((a, e) => a + e.amount, 0);
+  const net = plus + minus;
+  const cnt = inMonth.filter(e => e.amount > 0).length;
+  const tot = plus - minus;
+  const pw = tot > 0 ? Math.round(plus / tot * 100) : 0;
+  $('monthBox').innerHTML = `
+    <div class="month-card">
+      <div class="m-grid">
+        <div class="m-stat plus"><small>＋ ためた</small><b class="num">${fmt(plus)}<em>えん</em></b></div>
+        <div class="m-stat minus"><small>− ひかれた</small><b class="num">${fmt(-minus)}<em>えん</em></b></div>
+        <div class="m-stat net${net < 0 ? ' neg' : ''}"><small>この 月の ごうけい</small><b class="num">${net < 0 ? '−' + fmt(-net) : fmt(net)}<em>えん</em></b></div>
+      </div>
+      <div class="m-bar" aria-hidden="true"><i class="m-bar-plus" style="width:${pw}%"></i><i class="m-bar-minus" style="width:${100 - pw}%"></i></div>
+      <p class="m-note">🌟 がんばった かいすう: <b>${cnt}かい</b>${pw < 50 ? '（マイナスが おおい 月… がんばろう!）' : ''}</p>
+    </div>`;
+}
+$('mPrev').addEventListener('click', () => { monthOffset--; renderMonth(); });
+$('mNext').addEventListener('click', () => {
+  if (monthOffset < 0){ monthOffset++; renderMonth(); }
+});
+
+lockBtn.addEventListener('click', () => {
+  if (!state.pin) openPin('set1');
+  else if (unlocked) lockNow();
+  else openPin('unlock');
+});
+pinBanner.addEventListener('click', () => openPin('set1'));
+pinCancel.addEventListener('click', () => { pinOverlay.hidden = true; pinMode = 'unlock'; });
+pinForm.addEventListener('submit', ev => {
+  ev.preventDefault();
+  const v = pinInput.value.trim();
+  if (!/^\d{4}$/.test(v)){ toast('4けたの すうじで いれてね'); pinInput.select(); return; }
+  if (pinMode === 'unlock'){
+    if (v === state.pin){
+      pinOverlay.hidden = true;
+      unlocked = true; startAutoLock(); renderLock();
+      toast('🔓 パパ・ママモード!');
+    } else { toast('ばんごうが ちがうよ'); pinInput.value = ''; pinInput.select(); }
+  } else if (pinMode === 'set1'){
+    firstPin = v; pinMode = 'set2';
+    pinTitle.textContent = 'もういちど かくにん';
+    pinNote.textContent = 'おなじ ばんごうを もういちど いれてね';
+    pinInput.value = ''; pinInput.focus();
+  } else {
+    if (v === firstPin){
+      state.pin = v; save();
+      pinOverlay.hidden = true; pinMode = 'unlock';
+      unlocked = true; startAutoLock(); renderLock();
+      toast('🔓 ばんごうを きめたよ! つかいおわったら ロックしてね');
+    } else {
+      toast('ちがったよ。さいしょから もういちど');
+      pinMode = 'set1'; firstPin = '';
+      pinTitle.textContent = '🧑‍🍼 パパ・ママの ばんごう';
+      pinNote.textContent = 'パパ・ママだけの 4けたの ばんごうを きめてね';
+      pinInput.value = ''; pinInput.focus();
+    }
+  }
+});
+let forgotArmed = false, forgotTimer;
+pinForgot.addEventListener('click', () => {
+  if (!forgotArmed){
+    forgotArmed = true;
+    pinForgot.textContent = 'ほんとに ぜんぶ けす？ もういちど おして';
+    forgotTimer = setTimeout(() => {
+      forgotArmed = false;
+      pinForgot.textContent = 'ばんごうを わすれた…（すべての きろくも きえる）';
+    }, 3500);
+  } else {
+    clearTimeout(forgotTimer); forgotArmed = false;
+    state = freshState(); save();
+    pinOverlay.hidden = true; pinMode = 'unlock'; unlocked = true;
+    renderAll(); renderRules();
+    toast('🧽 さいしょから はじめるよ');
+  }
+});
+document.addEventListener('click', () => {
+  if (state.pin && unlocked && pinOverlay.hidden) startAutoLock();
+}, true);
+
+/* ---------- add entry ---------- */
+function addEntry(name, emoji, amount, sourceEl){
+  if (state.pin && !unlocked){ toast(LOCK_MSG); return; }
+  if (!amount) return;
+  const kidId = ak().id;
+  ak().entries.push({id: uid(), name, emoji, amount, ts: Date.now()});
+  save(); renderHistory();
+  flyCoin(sourceEl, () => {
+    if (ak().id === kidId) updateBalance();
+    const sign = amount > 0 ? '+' : '−';
+    toast(`${emoji} ${name}！ ${sign}${fmt(Math.abs(amount))}えん に なったよ!`);
+  });
+}
+
+/* ---------- goal form ---------- */
+goalAddBtn.addEventListener('click', () => { goalAddBtn.hidden = true; goalForm.hidden = false; $('goalNameIn').focus(); });
+$('goalEdit').addEventListener('click', () => {
+  const g = ak().goal;
+  $('goalNameIn').value = g ? g.name : '';
+  $('goalAmountIn').value = g ? g.amount : '';
+  goalSet.hidden = true; goalForm.hidden = false; $('goalNameIn').focus();
+});
+$('goalCancel').addEventListener('click', () => renderGoal());
+goalForm.addEventListener('submit', ev => {
+  ev.preventDefault();
+  const name = $('goalNameIn').value.trim();
+  const amt = Math.floor(parseInt($('goalAmountIn').value, 10));
+  if (!name){ toast('🎯 なにが ほしいか かいてね'); $('goalNameIn').focus(); return; }
+  if (!amt || amt <= 0){ toast('🎯 いくらえんか いれてね'); $('goalAmountIn').focus(); return; }
+  ak().goal = {name, amount: Math.min(amt, 9999999)};
+  save(); renderGoal();
+  toast(`🎯 もくひょうは「${name}」${fmt(ak().goal.amount)}えん!`);
+});
+
+/* ---------- custom task form ---------- */
+customForm.addEventListener('submit', ev => {
+  ev.preventDefault();
+  const name = customName.value.trim();
+  const amt = Math.floor(parseInt(customAmount.value, 10));
+  if (!name){ toast('✏️ なにをしたか かいてね'); customName.focus(); return; }
+  if (!amt || amt <= 0 || amt > 999999){ toast('✏️ いくらえんか（1〜999999）いれてね'); customAmount.focus(); return; }
+  requestEntry(name, '🌟', amt, customForm.querySelector('.btn'));
+  customName.value = ''; customAmount.value = '';
+  customName.focus();
+});
+
+/* ---------- add / rename / delete kid ---------- */
+kidAddForm.addEventListener('submit', ev => {
+  ev.preventDefault();
+  const name = $('kidAddName').value.trim().slice(0, 10);
+  if (!name){ toast('👶 なまえを いれてね'); $('kidAddName').focus(); return; }
+  const used = state.kids.map(k => k.color);
+  let color = PALETTES.map((p, i) => i).find(i => !used.includes(i));
+  if (color === undefined) color = state.kids.length % PALETTES.length;
+  state.kids.push(newKid(name, color));
+  state.active = state.kids.length - 1;
+  save();
+  $('kidAddName').value = ''; kidAddForm.hidden = true;
+  renderAll();
+  toast(`👶 ${name} の ちょきんばこを よういしたよ!`);
+});
+$('kidAddCancel').addEventListener('click', () => { kidAddForm.hidden = true; });
+
+kidEditForm.addEventListener('submit', ev => {
+  ev.preventDefault();
+  const name = $('kidEditName').value.trim().slice(0, 10);
+  if (!name){ toast('✏️ なまえを いれてね'); $('kidEditName').focus(); return; }
+  const old = ak().name;
+  ak().name = name;
+  save(); kidEditForm.hidden = true;
+  renderAll();
+  if (name !== old) toast(`✏️ ${old} → ${name} に かえたよ!`);
+});
+$('kidEditBtn').addEventListener('click', () => {
+  $('kidEditName').value = ak().name;
+  disarmDel();
+  kidEditForm.hidden = false;
+  $('kidEditName').focus();
+});
+$('kidEditCancel').addEventListener('click', () => { kidEditForm.hidden = true; });
+
+let delTimer;
+function disarmDel(){
+  clearTimeout(delTimer);
+  const b = $('kidDeleteBtn');
+  b.dataset.arm = '';
+  b.classList.remove('danger-armed');
+  b.textContent = '🗑️ この子を けす';
+}
+$('kidDeleteBtn').addEventListener('click', () => {
+  const b = $('kidDeleteBtn');
+  if (state.kids.length <= 1){ toast('さいごの 1にんは けせないよ'); return; }
+  if (b.dataset.arm !== '1'){
+    b.dataset.arm = '1';
+    b.classList.add('danger-armed');
+    b.textContent = `${ak().name}を ほんとに けす？ もういちど おして`;
+    delTimer = setTimeout(disarmDel, 3500);
+  } else {
+    clearTimeout(delTimer);
+    state.kids = state.kids.filter(k => k.id !== ak().id);
+    state.active = 0;
+    save(); kidEditForm.hidden = true;
+    renderAll();
+    toast('🧽 この子の データを けしたよ');
+  }
+});
+
+/* ---------- withdraw (2-step confirm) ---------- */
+let wTimer;
+function disarmWithdraw(){
+  clearTimeout(wTimer);
+  withdrawBtn.dataset.arm = '';
+  withdrawBtn.classList.remove('armed');
+  withdrawBtn.textContent = '💴 おかねを おろす';
+}
+withdrawBtn.addEventListener('click', () => {
+  if (state.pin && !unlocked){ toast(LOCK_MSG); return; }
+  const b = balance();
+  if (b <= 0){ toast('🐷 ちょきんが まだ ないよ'); return; }
+  if (withdrawBtn.dataset.arm !== '1'){
+    withdrawBtn.dataset.arm = '1';
+    withdrawBtn.classList.add('armed');
+    withdrawBtn.textContent = `${fmt(b)}えん おろす？ もういちど おして`;
+    wTimer = setTimeout(disarmWithdraw, 3500);
+  } else {
+    disarmWithdraw();
+    ak().entries.push({id: uid(), name:'おこづかいを もらった', emoji:'💴', amount: -b, ts: Date.now()});
+    save(); renderHistory(); updateBalance();
+    toast(`💴 ${fmt(b)}えん おろしたよ! パパ・ママに もらおう!`);
+  }
+});
+
+/* ---------- reset (2-step confirm, per kid) ---------- */
+let rTimer;
+const resetLabel = () => `♻️ ${ak().name}の きろくを リセット`;
+function disarmReset(){
+  clearTimeout(rTimer);
+  resetBtn.dataset.arm = '';
+  resetBtn.classList.remove('armed');
+  resetBtn.textContent = resetLabel();
+}
+resetBtn.addEventListener('click', () => {
+  if (resetBtn.dataset.arm !== '1'){
+    resetBtn.dataset.arm = '1';
+    resetBtn.classList.add('armed');
+    resetBtn.textContent = `ほんとに ${ak().name}の きろくを けす？ もういちど おして`;
+    rTimer = setTimeout(disarmReset, 3500);
+  } else {
+    disarmReset();
+    const k = ak();
+    k.entries = []; k.goal = null; k.pending = [];
+    save(); renderHistory(); updateBalance();
+    toast(`🧽 ${k.name}の きろくを ぜんぶ けしたよ`);
+  }
+});
+
+/* ---------- init ---------- */
+renderTasks();
+renderRules();
+renderAll();
+initCloud();
+</script>
+</body>
+</html>
