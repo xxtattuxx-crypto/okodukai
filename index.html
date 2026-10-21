@@ -505,7 +505,7 @@ body:not(.locked) .kid-only{display:none}
   </section>
 
   <footer class="foot">
-    <p>※ きろくは このブラウザの 中に 保存されるよ（ver.23）<br>（きろく・おろす・けす・なまえは 🔒パパ・ママモードで できるよ）</p>
+    <p>※ きろくは このブラウザの 中に 保存されるよ（ver.24）<br>（きろく・おろす・けす・なまえは 🔒パパ・ママモードで できるよ）</p>
   </footer>
 </div>
 
@@ -1202,6 +1202,7 @@ function updateLockBtn(){
     : (unlocked ? '🔓 ロックする' : (pend ? `🔒 パパ・ママ (${pend})` : '🔒 パパ・ママ'));
 }
 function renderLock(){
+  renderTabs();
   const enforce = !!state.pin;
   const cab = $('choreAddBox'); if (cab) cab.style.display = unlocked ? '' : 'none';
   document.body.classList.toggle('locked', enforce && !unlocked);
